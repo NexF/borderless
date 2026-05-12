@@ -46,6 +46,13 @@ cargo test  --workspace
 cargo run -p borderless-cli -- doctor
 ```
 
+第一次 clone 后建议启用仓库内的 git 钩子（commit 时自动跑 `cargo fmt --check` +
+`cargo clippy -D warnings`，确保不会被 CI 打回；细节见 [scripts/README.md](scripts/README.md)）：
+
+```bash
+git config --local core.hooksPath scripts/hooks
+```
+
 跨平台说明：
 
 - **Linux/X11**：链接时需要 `libxcb`、`libxtst` 头文件（用于 v0.2 的真实 PAL）。

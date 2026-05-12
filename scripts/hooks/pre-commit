@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#
+# borderless pre-commit hook
+# ---------------------------
+# Runs the same fast checks our CI's `fmt` and `clippy` jobs run, so
+# you find out about formatting / lint issues *before* pushing.
+#
+# Skipped automatically when no Rust file is staged.
+# Bypass with: `git commit --no-verify` (use sparingly).
+#
+# Tests are intentionally NOT run here; CI handles them. If you want
+# them locally too, copy this script to `pre-push`.
+
+set -eu
+
+# --- Detect: any staged *.rs or Cargo.toml change? -------------------
+if ! git diff --cached --name-only --diff-filter=ACMR \
+        | grep -E '(\.rs$|(^|/)Cargo\.toml$|(^|/)Cargo\.lock$)' >/dev/null; then
+    exit 0
+fi
+
+# --- Make sure cargo is on PATH (rustup standard layout). ------------
+if ! command -v cargo >/dev/null 2>&1; then
+    if [ -f "$HOME/.cargo/env" ]; then
+        # shellcheck disable=SC1091
+        . "$HOME/.cargo/env"
+    fi
+fi
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "pre-commit: cargo not found on PATH; install rustup or set core.hooksPath = ''" >&2
+    exit 1
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+red()   { printf '\033[31m%s\033[0m\n' "$*"; }
+green() { printf '\033[32m%s\033[0m\n' "$*"; }
+gray()  { printf '\033[2m%s\033[0m\n'  "$*"; }
+
+gray "[pre-commit] cargo fmt --all -- --check"
+if ! cargo fmt --all -- --check; then
+    red "[pre-commit] formatting issues. Run \`cargo fmt --all\` and re-stage."
+    exit 1
+fi
+
+gray "[pre-commit] cargo clippy --workspace --all-targets -- -D warnings"
+if ! cargo clippy --workspace --all-targets --quiet -- -D warnings; then
+    red "[pre-commit] clippy lints. Fix them or add an explicit \`#[allow(...)]\` with a reason."
+    exit 1
+fi
+
+green "[pre-commit] OK"
