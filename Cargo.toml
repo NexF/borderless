@@ -1,0 +1,79 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/transport",
+    "crates/pal",
+    "crates/pal-x11",
+    "crates/pal-windows",
+    "crates/pal-macos",
+    "crates/clipboard",
+    "crates/input-router",
+    "crates/cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+authors = ["borderless contributors"]
+repository = "https://github.com/borderless/borderless"
+
+[workspace.dependencies]
+# Async runtime & networking
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "fs"] }
+quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+rcgen = { version = "0.13", default-features = false, features = ["pem", "ring"] }
+rustls-pki-types = "1"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+postcard = { version = "1", features = ["use-std"] }
+bytes = "1"
+
+# Discovery
+mdns-sd = "0.11"
+
+# Clipboard (cross-platform abstraction)
+arboard = { version = "3", default-features = false }
+
+# CLI / config
+clap = { version = "4", features = ["derive"] }
+toml = "0.8"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Errors
+thiserror = "1"
+anyhow = "1"
+
+# Crypto
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+blake3 = "1"
+rand = "0.8"
+hex = "0.4"
+
+# Utils
+parking_lot = "0.12"
+once_cell = "1"
+directories = "5"
+
+# Internal crates
+borderless-core = { path = "crates/core" }
+borderless-transport = { path = "crates/transport" }
+borderless-pal = { path = "crates/pal" }
+borderless-pal-x11 = { path = "crates/pal-x11" }
+borderless-pal-windows = { path = "crates/pal-windows" }
+borderless-pal-macos = { path = "crates/pal-macos" }
+borderless-clipboard = { path = "crates/clipboard" }
+borderless-input-router = { path = "crates/input-router" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+opt-level = 3

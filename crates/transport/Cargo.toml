@@ -1,0 +1,39 @@
+[package]
+name = "borderless-transport"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+borderless-core = { workspace = true }
+
+tokio = { workspace = true }
+quinn = { workspace = true }
+rustls = { workspace = true }
+rcgen = { workspace = true }
+rustls-pki-types = { workspace = true }
+mdns-sd = { workspace = true }
+
+serde = { workspace = true }
+postcard = { workspace = true }
+bytes = { workspace = true }
+ed25519-dalek = { workspace = true }
+blake3 = { workspace = true }
+rand = { workspace = true }
+hex = { workspace = true }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+parking_lot = { workspace = true }
+once_cell = { workspace = true }
+
+toml = { workspace = true }
+directories = { workspace = true }
+
+[dev-dependencies]
+borderless-clipboard = { workspace = true }
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+tracing-subscriber = { workspace = true }
+tempfile = "3"

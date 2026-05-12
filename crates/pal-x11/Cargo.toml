@@ -1,0 +1,18 @@
+[package]
+name = "borderless-pal-x11"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+borderless-core = { workspace = true }
+borderless-pal = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+arboard = { workspace = true }
+x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
+async-trait = "0.1"
+tokio = { workspace = true }

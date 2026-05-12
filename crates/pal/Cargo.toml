@@ -1,0 +1,12 @@
+[package]
+name = "borderless-pal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+borderless-core = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+async-trait = "0.1"

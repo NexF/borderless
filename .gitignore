@@ -1,0 +1,15 @@
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# Local config / state
+/.borderless/
+known_peers.toml
+psk
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

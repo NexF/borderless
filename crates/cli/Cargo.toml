@@ -1,0 +1,39 @@
+[package]
+name = "borderless-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "borderless"
+path = "src/main.rs"
+
+[dependencies]
+borderless-core = { workspace = true }
+borderless-transport = { workspace = true }
+borderless-pal = { workspace = true }
+borderless-clipboard = { workspace = true }
+borderless-input-router = { workspace = true }
+
+clap = { workspace = true, features = ["derive", "env"] }
+toml = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["signal"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+directories = { workspace = true }
+parking_lot = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+borderless-pal-x11 = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+borderless-pal-windows = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+borderless-pal-macos = { workspace = true }
