@@ -100,17 +100,15 @@ pub fn announce_and_browse(
                         continue;
                     }
                     let props = info.get_properties();
-                    let node_id = props
-                        .get_property_val_str("nodeid")
-                        .and_then(|s| {
-                            let bytes = hex::decode(s).ok()?;
-                            if bytes.len() != 16 {
-                                return None;
-                            }
-                            let mut id = [0u8; 16];
-                            id.copy_from_slice(&bytes);
-                            Some(NodeId(id))
-                        });
+                    let node_id = props.get_property_val_str("nodeid").and_then(|s| {
+                        let bytes = hex::decode(s).ok()?;
+                        if bytes.len() != 16 {
+                            return None;
+                        }
+                        let mut id = [0u8; 16];
+                        id.copy_from_slice(&bytes);
+                        Some(NodeId(id))
+                    });
                     let name = props
                         .get_property_val_str("name")
                         .map(|s| s.to_string())
@@ -133,13 +131,7 @@ pub fn announce_and_browse(
         }
     });
 
-    Ok((
-        DiscoveryHandle {
-            daemon,
-            fullname,
-        },
-        rx,
-    ))
+    Ok((DiscoveryHandle { daemon, fullname }, rx))
 }
 
 fn local_ipv4_or_empty() -> String {

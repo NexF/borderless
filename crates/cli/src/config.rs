@@ -7,7 +7,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 
 /// Top-level config.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
     /// `[node]` section.
@@ -16,16 +16,6 @@ pub struct Config {
     pub network: NetworkConfig,
     /// `[clipboard]` section.
     pub clipboard: ClipboardConfig,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            node: NodeConfig::default(),
-            network: NetworkConfig::default(),
-            clipboard: ClipboardConfig::default(),
-        }
-    }
 }
 
 /// `[node]`.
@@ -108,8 +98,7 @@ pub fn default_config_dir() -> Result<PathBuf> {
 pub fn load_or_default(dir: &Path) -> Result<Config> {
     let path = dir.join("config.toml");
     if path.exists() {
-        let raw = fs::read_to_string(&path)
-            .with_context(|| format!("read {}", path.display()))?;
+        let raw = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
         Ok(toml::from_str(&raw)?)
     } else {
         fs::create_dir_all(dir)?;

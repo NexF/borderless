@@ -16,7 +16,9 @@ pub struct WindowsCapture {
 impl WindowsCapture {
     /// New capture (no-op until v0.2).
     pub fn new() -> Self {
-        Self { mode: CaptureMode::Off }
+        Self {
+            mode: CaptureMode::Off,
+        }
     }
 }
 

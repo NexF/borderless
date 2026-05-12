@@ -14,7 +14,9 @@ pub struct MacosCapture {
 
 impl MacosCapture {
     pub fn new() -> Self {
-        Self { mode: CaptureMode::Off }
+        Self {
+            mode: CaptureMode::Off,
+        }
     }
 }
 

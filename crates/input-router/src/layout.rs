@@ -102,8 +102,16 @@ mod tests {
         let a = n(1);
         let b = n(2);
         let mut l = Layout::new();
-        l.set_screen(Screen { node: a, width: 1920, height: 1080 });
-        l.set_screen(Screen { node: b, width: 1920, height: 1080 });
+        l.set_screen(Screen {
+            node: a,
+            width: 1920,
+            height: 1080,
+        });
+        l.set_screen(Screen {
+            node: b,
+            width: 1920,
+            height: 1080,
+        });
         l.connect(a, Edge::Right, b);
         assert_eq!(l.neighbor(a, Edge::Right), Some(b));
         assert_eq!(l.neighbor(b, Edge::Left), Some(a));

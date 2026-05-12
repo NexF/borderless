@@ -30,7 +30,11 @@ impl std::fmt::Display for ShortAuthString {
 /// The pubkeys are sorted lexicographically before hashing so peer A
 /// and peer B compute the same digest regardless of who initiated.
 pub fn sas_digits(pk_a: &[u8; 32], pk_b: &[u8; 32], salt: &[u8]) -> ShortAuthString {
-    let (lo, hi) = if pk_a <= pk_b { (pk_a, pk_b) } else { (pk_b, pk_a) };
+    let (lo, hi) = if pk_a <= pk_b {
+        (pk_a, pk_b)
+    } else {
+        (pk_b, pk_a)
+    };
     let mut h = Hasher::new();
     h.update(b"borderless/sas/v0");
     h.update(lo);
@@ -53,14 +57,20 @@ mod tests {
         let pk_a = [1u8; 32];
         let pk_b = [2u8; 32];
         let salt = b"abc";
-        assert_eq!(sas_digits(&pk_a, &pk_b, salt), sas_digits(&pk_b, &pk_a, salt));
+        assert_eq!(
+            sas_digits(&pk_a, &pk_b, salt),
+            sas_digits(&pk_b, &pk_a, salt)
+        );
     }
 
     #[test]
     fn salt_changes_digits() {
         let pk_a = [1u8; 32];
         let pk_b = [2u8; 32];
-        assert_ne!(sas_digits(&pk_a, &pk_b, b"a"), sas_digits(&pk_a, &pk_b, b"b"));
+        assert_ne!(
+            sas_digits(&pk_a, &pk_b, b"a"),
+            sas_digits(&pk_a, &pk_b, b"b")
+        );
     }
 
     #[test]

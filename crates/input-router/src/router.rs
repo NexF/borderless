@@ -147,8 +147,16 @@ mod tests {
         let a = n(1);
         let b = n(2);
         let mut l = Layout::new();
-        l.set_screen(Screen { node: a, width: 1920, height: 1080 });
-        l.set_screen(Screen { node: b, width: 1920, height: 1080 });
+        l.set_screen(Screen {
+            node: a,
+            width: 1920,
+            height: 1080,
+        });
+        l.set_screen(Screen {
+            node: b,
+            width: 1920,
+            height: 1080,
+        });
         l.connect(a, Edge::Right, b);
         (l, a, b)
     }
@@ -171,7 +179,10 @@ mod tests {
         let out = r.on_mouse_move(50, 0, 0, &layout);
         assert_eq!(out.len(), 2);
         match &out[0] {
-            Routed::Remote { target, event: InputEvent::Leave { to } } => {
+            Routed::Remote {
+                target,
+                event: InputEvent::Leave { to },
+            } => {
                 assert_eq!(*target, a);
                 assert_eq!(*to, b);
             }

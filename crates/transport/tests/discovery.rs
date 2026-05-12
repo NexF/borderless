@@ -16,7 +16,10 @@ async fn next_peer(
     rx: &mut UnboundedReceiver<DiscoveredPeer>,
     timeout: Duration,
 ) -> Option<DiscoveredPeer> {
-    tokio::time::timeout(timeout, rx.recv()).await.ok().flatten()
+    tokio::time::timeout(timeout, rx.recv())
+        .await
+        .ok()
+        .flatten()
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

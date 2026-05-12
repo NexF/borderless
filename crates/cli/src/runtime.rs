@@ -6,9 +6,7 @@ use borderless_clipboard::{Decision, Engine as ClipboardEngine};
 use borderless_core::WireFrame;
 use borderless_pal::Clipboard as ClipboardTrait;
 use borderless_transport::discovery::{announce_and_browse, DiscoveredPeer};
-use borderless_transport::{
-    Connection, Endpoint, EndpointConfig, Identity, PeerStore,
-};
+use borderless_transport::{Connection, Endpoint, EndpointConfig, Identity, PeerStore};
 use parking_lot::Mutex;
 use std::path::Path;
 use std::sync::Arc;
@@ -29,13 +27,9 @@ pub struct Runtime {
 
 impl Runtime {
     /// Construct from on-disk state.
-    pub async fn bootstrap(
-        cfg: &Config,
-        config_dir: &Path,
-        allow_new_peers: bool,
-    ) -> Result<Self> {
-        let identity = Identity::load_or_generate(config_dir.join("identity.key"))
-            .context("load identity")?;
+    pub async fn bootstrap(cfg: &Config, config_dir: &Path, allow_new_peers: bool) -> Result<Self> {
+        let identity =
+            Identity::load_or_generate(config_dir.join("identity.key")).context("load identity")?;
         let peers = Arc::new(Mutex::new(
             PeerStore::open(config_dir.join("known_peers.toml")).context("open peer store")?,
         ));
@@ -49,8 +43,7 @@ impl Runtime {
             .context("bind quic endpoint")?;
         let endpoint = Arc::new(endpoint);
 
-        let clipboard =
-            ClipboardEngine::new(identity.node_id(), cfg.clipboard.history_size.max(1));
+        let clipboard = ClipboardEngine::new(identity.node_id(), cfg.clipboard.history_size.max(1));
 
         Ok(Self {
             identity,
@@ -255,4 +248,4 @@ async fn dial_peer(endpoint: &Endpoint, peer: &DiscoveredPeer) -> Result<Connect
 }
 
 #[allow(unused_imports)]
-use {error as _err_unused};
+use error as _err_unused;

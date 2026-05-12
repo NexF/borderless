@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use borderless_core::{ClipItem, ClipboardSnapshot, InputEvent};
-use borderless_pal::{CaptureMode, Clipboard, EventSink, InputCapture, InputEmit, PalError, PalResult};
+use borderless_pal::{
+    CaptureMode, Clipboard, EventSink, InputCapture, InputEmit, PalError, PalResult,
+};
 use tokio::sync::mpsc;
 use tracing::{debug, warn};
 
@@ -19,7 +21,9 @@ pub struct X11Capture {
 impl X11Capture {
     /// Construct a new capture backend (no-op until `start`).
     pub fn new() -> Self {
-        Self { mode: CaptureMode::Off }
+        Self {
+            mode: CaptureMode::Off,
+        }
     }
 }
 

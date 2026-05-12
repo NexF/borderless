@@ -88,8 +88,8 @@ pub struct Connection {
 impl Connection {
     /// Send a `WireFrame` reliably on a fresh uni stream.
     pub async fn send_frame(&self, frame: &WireFrame) -> Result<()> {
-        let bytes = borderless_core::encode(frame)
-            .map_err(|e| Error::Codec(format!("encode: {e}")))?;
+        let bytes =
+            borderless_core::encode(frame).map_err(|e| Error::Codec(format!("encode: {e}")))?;
         let mut stream = self.inner.open_uni().await?;
         let len = (bytes.len() as u32).to_le_bytes();
         stream.write_all(&len).await?;
@@ -100,11 +100,7 @@ impl Connection {
 
     /// Receive the next `WireFrame` from any incoming uni stream.
     pub async fn recv_frame(&self) -> Result<WireFrame> {
-        let mut stream = self
-            .inner
-            .accept_uni()
-            .await
-            .map_err(Error::Connection)?;
+        let mut stream = self.inner.accept_uni().await.map_err(Error::Connection)?;
         let mut len_buf = [0u8; 4];
         read_exact(&mut stream, &mut len_buf).await?;
         let len = u32::from_le_bytes(len_buf) as usize;
@@ -118,8 +114,8 @@ impl Connection {
 
     /// Send a single `InputEvent` over an unreliable QUIC datagram.
     pub fn send_datagram(&self, event: &borderless_core::InputEvent) -> Result<()> {
-        let bytes = borderless_core::encode(event)
-            .map_err(|e| Error::Codec(format!("encode: {e}")))?;
+        let bytes =
+            borderless_core::encode(event).map_err(|e| Error::Codec(format!("encode: {e}")))?;
         self.inner
             .send_datagram(bytes.into())
             .map_err(|e| Error::Codec(format!("datagram: {e}")))
@@ -283,8 +279,8 @@ impl Endpoint {
             max_protocol: PROTOCOL_V0,
             signature: signature.to_vec(),
         };
-        let our_hello_bytes =
-            borderless_core::encode(&our_hello).map_err(|e| Error::Codec(format!("hello encode: {e}")))?;
+        let our_hello_bytes = borderless_core::encode(&our_hello)
+            .map_err(|e| Error::Codec(format!("hello encode: {e}")))?;
 
         // Initiator sends first. Acceptor reads first. This avoids a
         // deadlock where both sides try to accept_uni without anyone

@@ -65,7 +65,8 @@ fn init_tracing(verbose: u8) {
         2 => "borderless=trace,debug",
         _ => "trace",
     };
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_level));
+    let filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_level));
     tracing_subscriber::fmt()
         .with_env_filter(filter)
         .with_target(false)
@@ -105,8 +106,7 @@ async fn main() -> Result<()> {
         Command::Status => {
             let identity =
                 borderless_transport::Identity::load_or_generate(config_dir.join("identity.key"))?;
-            let store =
-                borderless_transport::PeerStore::open(config_dir.join("known_peers.toml"))?;
+            let store = borderless_transport::PeerStore::open(config_dir.join("known_peers.toml"))?;
             println!("node_id   : {}", identity.node_id());
             println!("name      : {}", cfg.node.name);
             println!("bind      : {}", cfg.network.bind_addr());

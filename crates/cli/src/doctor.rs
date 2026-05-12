@@ -80,10 +80,7 @@ mod linux {
     use super::{CheckResult, Status};
 
     pub fn checks() -> Vec<CheckResult> {
-        let mut v = Vec::new();
-        v.push(display_check());
-        v.push(wayland_warning());
-        v
+        vec![display_check(), wayland_warning()]
     }
 
     fn display_check() -> CheckResult {

@@ -256,7 +256,10 @@ async fn many_clipboard_frames_in_a_row_preserve_order() {
     for i in 0..16 {
         let snap = clip_a.produce_text(format!("v{i}"));
         sent.push(snap.clone());
-        conn_a.send_frame(&WireFrame::Clipboard(snap)).await.unwrap();
+        conn_a
+            .send_frame(&WireFrame::Clipboard(snap))
+            .await
+            .unwrap();
     }
     for expected in sent {
         let frame = tokio::time::timeout(Duration::from_secs(2), conn_b.recv_frame())
@@ -316,7 +319,10 @@ async fn unknown_peer_is_rejected_outside_pairing_mode() {
     let dial = ep_b.connect(addr_a).await;
 
     // Both sides should fail because A rejects an unknown pubkey.
-    let acc_res = tokio::time::timeout(Duration::from_secs(3), acc).await.unwrap().unwrap();
+    let acc_res = tokio::time::timeout(Duration::from_secs(3), acc)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(acc_res.is_err(), "alice must reject unknown peer");
     assert!(dial.is_err(), "bob's dial must fail because alice closes");
 }
