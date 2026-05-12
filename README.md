@@ -36,22 +36,21 @@
 | 常驻内存占用            | < 30 MB  |
 
 
-## 构建
+## 快速开始
 
-需要 Rust 1.75+。
+需要 Rust 1.75+（用 [rustup](https://rustup.rs/) 安装，不要用 `apt install cargo`）。
 
 ```bash
 cargo build --workspace
-cargo test  --workspace
-cargo run -p borderless-cli -- doctor
-```
+cargo test  --workspace                # 42 个自动化测试
+cargo run   -p borderless-cli -- doctor
 
-第一次 clone 后建议启用仓库内的 git 钩子（commit 时自动跑 `cargo fmt --check` +
-`cargo clippy -D warnings`，确保不会被 CI 打回；细节见 [scripts/README.md](scripts/README.md)）：
-
-```bash
+# 启用项目内的 git 钩子（commit 前自动 fmt + clippy，避免 CI 红灯）
 git config --local core.hooksPath scripts/hooks
 ```
+
+完整的开发工作流、CI/Release 流程、代码风格、提交信息约定，见
+[CONTRIBUTING.md](CONTRIBUTING.md)。
 
 跨平台说明：
 
