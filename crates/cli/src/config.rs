@@ -1,4 +1,9 @@
 //! `borderless` configuration file (`config.toml`).
+//!
+//! v0.2 splits the configuration along the `kind = "hub" | "spoke"`
+//! axis. The Hub binds a TCP+TLS listener on a port; the Spoke
+//! initiates outbound connections to a fixed `server_addr`. mDNS-based
+//! auto-discovery has been removed.
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -6,23 +11,32 @@ use std::fs;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 
+/// Default TCP port for the borderless listener.
+pub const DEFAULT_PORT: u16 = 38_437;
+
 /// Top-level config.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Config {
     /// `[node]` section.
     pub node: NodeConfig,
-    /// `[network]` section.
-    pub network: NetworkConfig,
+    /// `[role]` section.
+    pub role: RoleConfig,
+    /// `[hub]` section (read only when `role.kind == Hub`).
+    pub hub: HubConfig,
+    /// `[client]` section (read only when `role.kind == Spoke`).
+    pub client: ClientConfig,
     /// `[clipboard]` section.
     pub clipboard: ClipboardConfig,
+    /// `[input]` section.
+    pub input: InputConfig,
 }
 
 /// `[node]`.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct NodeConfig {
-    /// Display name advertised over mDNS / in `Hello`.
+    /// Display name advertised in the SignedHello frame.
     pub name: String,
 }
 
@@ -34,30 +48,69 @@ impl Default for NodeConfig {
     }
 }
 
-/// `[network]`.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(default)]
-pub struct NetworkConfig {
-    /// UDP port to bind. `0` for ephemeral.
-    pub port: u16,
-    /// IP to bind. `0.0.0.0` for "all interfaces".
-    pub bind_ip: IpAddr,
+/// Role: hub (server) or spoke (client). New installs default to
+/// `Unconfigured` so the user is prompted to pick a role on first run.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum RoleKind {
+    /// Unset; CLI subcommands `serve` / `connect` set this on first
+    /// successful run.
+    #[default]
+    Unconfigured,
+    /// This node binds a listener and accepts spokes.
+    Hub,
+    /// This node dials a hub.
+    Spoke,
 }
 
-impl Default for NetworkConfig {
+/// `[role]`.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct RoleConfig {
+    /// Persistent role kind.
+    pub kind: RoleKind,
+}
+
+/// `[hub]` section.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct HubConfig {
+    /// TCP socket to bind. `0.0.0.0` for all interfaces.
+    pub bind_ip: IpAddr,
+    /// Listening port.
+    pub port: u16,
+    /// Whether unknown spokes may pair (TOFU). Mirrors the v0.1
+    /// `pair` mode.
+    pub accept_new_peers: bool,
+}
+
+impl Default for HubConfig {
     fn default() -> Self {
         Self {
-            port: 38_437,
             bind_ip: IpAddr::V4(Ipv4Addr::UNSPECIFIED),
+            port: DEFAULT_PORT,
+            accept_new_peers: false,
         }
     }
 }
 
-impl NetworkConfig {
+impl HubConfig {
     /// Resolved bind address.
     pub fn bind_addr(&self) -> SocketAddr {
         SocketAddr::new(self.bind_ip, self.port)
     }
+}
+
+/// `[client]` section.
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct ClientConfig {
+    /// `host:port` of the hub. Persisted by `borderless connect`.
+    pub server_addr: Option<String>,
+    /// Optional NodeId pinning. Hex-encoded BLAKE3-truncated pubkey.
+    /// When set, the client will refuse to talk to a hub whose
+    /// fingerprint doesn't match.
+    pub expected_server_id: Option<String>,
 }
 
 /// `[clipboard]`.
@@ -66,8 +119,11 @@ impl NetworkConfig {
 pub struct ClipboardConfig {
     /// Number of past snapshots to keep.
     pub history_size: usize,
-    /// Whether to sync text. v0.1 always honours this.
+    /// Whether to sync text.
     pub sync_text: bool,
+    /// Whether to sync images. v0.2 supports PNG and JPEG with lazy
+    /// fetch for items above the inline threshold.
+    pub sync_image: bool,
 }
 
 impl Default for ClipboardConfig {
@@ -75,7 +131,24 @@ impl Default for ClipboardConfig {
         Self {
             history_size: 50,
             sync_text: true,
+            sync_image: true,
         }
+    }
+}
+
+/// `[input]`.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct InputConfig {
+    /// Spoke-side gate: when false, the spoke ignores `WireFrame::Input`
+    /// frames and runs as a "clipboard-only" client. Has no effect on
+    /// the hub side.
+    pub enabled: bool,
+}
+
+impl Default for InputConfig {
+    fn default() -> Self {
+        Self { enabled: true }
     }
 }
 
@@ -103,10 +176,17 @@ pub fn load_or_default(dir: &Path) -> Result<Config> {
     } else {
         fs::create_dir_all(dir)?;
         let cfg = Config::default();
-        let raw = toml::to_string_pretty(&cfg)?;
-        fs::write(&path, raw)?;
+        save(dir, &cfg)?;
         Ok(cfg)
     }
+}
+
+/// Persist `cfg` back to `dir/config.toml`.
+pub fn save(dir: &Path, cfg: &Config) -> Result<()> {
+    fs::create_dir_all(dir)?;
+    let raw = toml::to_string_pretty(cfg)?;
+    fs::write(dir.join("config.toml"), raw)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -117,24 +197,22 @@ mod tests {
     #[test]
     fn defaults_are_sensible() {
         let cfg = Config::default();
-        assert_eq!(cfg.network.port, 38_437);
-        assert!(cfg.network.bind_ip.is_unspecified());
+        assert_eq!(cfg.hub.port, DEFAULT_PORT);
+        assert!(cfg.hub.bind_ip.is_unspecified());
+        assert!(!cfg.hub.accept_new_peers);
         assert!(cfg.clipboard.sync_text);
-        assert!(cfg.clipboard.history_size > 0);
+        assert!(cfg.clipboard.sync_image);
+        assert!(cfg.input.enabled);
+        assert_eq!(cfg.role.kind, RoleKind::Unconfigured);
         assert!(!cfg.node.name.is_empty());
     }
 
     #[test]
     fn missing_file_writes_default_and_returns_it() {
         let dir = tempdir().unwrap();
-        let cfg = load_or_default(dir.path()).unwrap();
-        assert_eq!(cfg.network.port, 38_437);
+        let _cfg = load_or_default(dir.path()).unwrap();
         let on_disk = dir.path().join("config.toml");
         assert!(on_disk.exists(), "default file must be written");
-        // Re-reading without modification yields the same values.
-        let again = load_or_default(dir.path()).unwrap();
-        assert_eq!(again.network.port, cfg.network.port);
-        assert_eq!(again.node.name, cfg.node.name);
     }
 
     #[test]
@@ -146,22 +224,52 @@ mod tests {
 [node]
 name = "alice"
 
-[network]
-port = 12345
+[role]
+kind = "hub"
+
+[hub]
 bind_ip = "127.0.0.1"
+port = 12345
+accept_new_peers = true
+
+[client]
+server_addr = "10.0.0.1:9999"
 
 [clipboard]
 history_size = 7
 sync_text = false
+sync_image = false
+
+[input]
+enabled = false
 "#,
         )
         .unwrap();
         let cfg = load_or_default(dir.path()).unwrap();
         assert_eq!(cfg.node.name, "alice");
-        assert_eq!(cfg.network.port, 12345);
-        assert_eq!(cfg.network.bind_addr().to_string(), "127.0.0.1:12345");
+        assert_eq!(cfg.role.kind, RoleKind::Hub);
+        assert_eq!(cfg.hub.port, 12345);
+        assert!(cfg.hub.accept_new_peers);
+        assert_eq!(cfg.client.server_addr.as_deref(), Some("10.0.0.1:9999"));
         assert_eq!(cfg.clipboard.history_size, 7);
         assert!(!cfg.clipboard.sync_text);
+        assert!(!cfg.clipboard.sync_image);
+        assert!(!cfg.input.enabled);
+    }
+
+    #[test]
+    fn save_and_reload_round_trips() {
+        let dir = tempdir().unwrap();
+        let mut cfg = Config::default();
+        cfg.node.name = "bob".into();
+        cfg.role.kind = RoleKind::Spoke;
+        cfg.client.server_addr = Some("hub.lan:38437".into());
+        save(dir.path(), &cfg).unwrap();
+
+        let loaded = load_or_default(dir.path()).unwrap();
+        assert_eq!(loaded.node.name, "bob");
+        assert_eq!(loaded.role.kind, RoleKind::Spoke);
+        assert_eq!(loaded.client.server_addr.as_deref(), Some("hub.lan:38437"));
     }
 
     #[test]

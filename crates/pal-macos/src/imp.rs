@@ -1,75 +1,23 @@
+//! macOS PAL: clipboard backend (always available) plus capture +
+//! emit re-exports.
+
 use std::time::Duration;
 
 use async_trait::async_trait;
-use borderless_core::{ClipItem, ClipboardSnapshot, InputEvent};
-use borderless_pal::{
-    CaptureMode, Clipboard, EventSink, InputCapture, InputEmit, PalError, PalResult,
-};
+use borderless_core::{ClipItem, ClipboardSnapshot};
+use borderless_pal::{Clipboard, PalError, PalResult};
 use tokio::sync::mpsc;
-use tracing::{debug, warn};
 
-pub struct MacosCapture {
-    mode: CaptureMode,
-}
+pub use crate::capture::MacosCapture;
+pub use crate::emit::MacosEmit;
 
-impl MacosCapture {
-    pub fn new() -> Self {
-        Self {
-            mode: CaptureMode::Off,
-        }
-    }
-}
-
-impl Default for MacosCapture {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputCapture for MacosCapture {
-    async fn start(&mut self, _sink: EventSink) -> PalResult<()> {
-        warn!("MacosCapture::start is a v0.1 stub; CGEventTap wiring lands in v0.2");
-        Ok(())
-    }
-    async fn stop(&mut self) -> PalResult<()> {
-        Ok(())
-    }
-    async fn set_mode(&mut self, mode: CaptureMode) -> PalResult<()> {
-        debug!(?mode, "MacosCapture::set_mode");
-        self.mode = mode;
-        Ok(())
-    }
-}
-
-pub struct MacosEmit;
-
-impl MacosEmit {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for MacosEmit {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputEmit for MacosEmit {
-    async fn emit(&mut self, _event: InputEvent) -> PalResult<()> {
-        Err(PalError::Unsupported(
-            "macOS input emission lands in v0.2 (CGEventPost)",
-        ))
-    }
-}
-
+/// arboard-backed clipboard.
 pub struct MacosClipboard {
     inner: arboard::Clipboard,
 }
 
 impl MacosClipboard {
+    /// Open the macOS pasteboard via arboard.
     pub fn new() -> PalResult<Self> {
         let inner = arboard::Clipboard::new().map_err(|e| PalError::Backend(e.to_string()))?;
         Ok(Self { inner })

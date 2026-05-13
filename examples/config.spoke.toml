@@ -1,0 +1,35 @@
+# borderless Spoke 示例配置
+# 把本文件复制到 ~/.config/borderless/config.toml（Linux）
+# 或 %APPDATA%\borderless\borderless\config.toml（Windows）
+# 或 ~/Library/Application Support/io.borderless.borderless/config.toml（macOS）
+# 然后按需修改后启动 `borderless connect`。
+#
+# 也可以不写本文件，直接 `borderless connect <hub-host>:38437 --pair`，
+# 配对成功后会自动把这份配置落盘。
+
+[node]
+# 节点显示名
+name = "laptop"
+
+[role]
+# Spoke 模式：本机主动拨向 Hub
+kind = "spoke"
+
+[hub]
+# Spoke 模式不会读取此段，留空即可
+
+[client]
+# Hub 的地址
+server_addr = "192.168.10.5:38437"
+# 可选：钉死 Hub 公钥指纹（hex 编码 32 字节 BLAKE3-truncated pubkey）
+# 设了之后即便 known_peers.toml 被篡改也会拒绝
+# expected_server_id = "abcd1234...deadbeef"
+
+[clipboard]
+history_size = 50
+sync_text = true
+sync_image = true
+
+[input]
+# Spoke 端键鼠注入开关：false 时变成"只同步剪贴板"的客户端
+enabled = true

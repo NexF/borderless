@@ -1,75 +1,17 @@
+//! Windows PAL: clipboard backend (always available) plus capture +
+//! emit re-exports.
+
 use std::time::Duration;
 
 use async_trait::async_trait;
-use borderless_core::{ClipItem, ClipboardSnapshot, InputEvent};
-use borderless_pal::{
-    CaptureMode, Clipboard, EventSink, InputCapture, InputEmit, PalError, PalResult,
-};
+use borderless_core::{ClipItem, ClipboardSnapshot};
+use borderless_pal::{Clipboard, PalError, PalResult};
 use tokio::sync::mpsc;
-use tracing::{debug, warn};
 
-/// Stub for Windows low-level keyboard + mouse hooks.
-pub struct WindowsCapture {
-    mode: CaptureMode,
-}
+pub use crate::capture::WindowsCapture;
+pub use crate::emit::WindowsEmit;
 
-impl WindowsCapture {
-    /// New capture (no-op until v0.2).
-    pub fn new() -> Self {
-        Self {
-            mode: CaptureMode::Off,
-        }
-    }
-}
-
-impl Default for WindowsCapture {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputCapture for WindowsCapture {
-    async fn start(&mut self, _sink: EventSink) -> PalResult<()> {
-        warn!("WindowsCapture::start is a v0.1 stub; SetWindowsHookEx wiring lands in v0.2");
-        Ok(())
-    }
-    async fn stop(&mut self) -> PalResult<()> {
-        Ok(())
-    }
-    async fn set_mode(&mut self, mode: CaptureMode) -> PalResult<()> {
-        debug!(?mode, "WindowsCapture::set_mode");
-        self.mode = mode;
-        Ok(())
-    }
-}
-
-/// Stub for `SendInput`-based emission.
-pub struct WindowsEmit;
-
-impl WindowsEmit {
-    /// New emitter.
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for WindowsEmit {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputEmit for WindowsEmit {
-    async fn emit(&mut self, _event: InputEvent) -> PalResult<()> {
-        Err(PalError::Unsupported(
-            "Windows input emission lands in v0.2 (SendInput)",
-        ))
-    }
-}
-
-/// arboard-backed clipboard, identical strategy as the X11 backend.
+/// arboard-backed clipboard.
 pub struct WindowsClipboard {
     inner: arboard::Clipboard,
 }

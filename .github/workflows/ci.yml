@@ -30,7 +30,12 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxtst-dev libx11-dev
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   test:
@@ -46,6 +51,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install Linux deps
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
-      - run: cargo build --workspace --verbose
-      - run: cargo test  --workspace --verbose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libxtst-dev libx11-dev xvfb
+      - name: Build
+        run: cargo build --workspace --verbose
+      - name: Run tests (Linux, headless via Xvfb)
+        if: runner.os == 'Linux'
+        # Wrap in xvfb-run so X11-touching tests (clipboard, x11rb) have
+        # a display to talk to.
+        run: xvfb-run -a cargo test --workspace --verbose
+      - name: Run tests (macOS / Windows)
+        if: runner.os != 'Linux'
+        run: cargo test --workspace --verbose

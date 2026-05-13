@@ -69,19 +69,25 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/borderless dist/
-          cp README.md dist/
-          tar -C dist -czf borderless-${{ matrix.target }}.tar.gz .
+          STAGE="borderless-${{ matrix.target }}"
+          mkdir -p "dist/$STAGE/examples"
+          cp target/${{ matrix.target }}/release/borderless "dist/$STAGE/"
+          cp README.md "dist/$STAGE/"
+          cp examples/config.hub.toml   "dist/$STAGE/examples/"
+          cp examples/config.spoke.toml "dist/$STAGE/examples/"
+          tar -C dist -czf "$STAGE.tar.gz" "$STAGE"
 
       - name: Stage artifact (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist
-          Copy-Item target/${{ matrix.target }}/release/borderless.exe dist/
-          Copy-Item README.md dist/
-          Compress-Archive -Path dist/* -DestinationPath borderless-${{ matrix.target }}.zip
+          $stage = "borderless-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path "dist/$stage/examples" | Out-Null
+          Copy-Item target/${{ matrix.target }}/release/borderless.exe "dist/$stage/"
+          Copy-Item README.md "dist/$stage/"
+          Copy-Item examples/config.hub.toml   "dist/$stage/examples/"
+          Copy-Item examples/config.spoke.toml "dist/$stage/examples/"
+          Compress-Archive -Path "dist/$stage" -DestinationPath "$stage.zip"
 
       - name: Upload to workflow run
         uses: actions/upload-artifact@v4

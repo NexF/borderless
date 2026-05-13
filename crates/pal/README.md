@@ -24,8 +24,13 @@ trait Clipboard    { async read / write + watch }
 - **错误统一为 `PalError`**：`Unsupported`、`PermissionRequired`、`Backend`、
   `Io` 四种基础形态，便于 CLI 把"我没权限"和"我崩了"区分对待
 
-## 为什么 v0.1 主要是契约而非实现
+## v0.2 实装情况
 
-输入捕获/注入这块每平台都有自己的"性格"（macOS 要权限弹窗、Windows 要消息泵、
-Wayland 要 portal），强行拼到一起反而难调试。
-v0.1 先把网络与剪贴板做扎实，trait 就位，等 v0.2 各平台分别填实即可。
+| 实现 | InputCapture | InputEmit | Clipboard 文本 | Clipboard 图片 |
+|---|---|---|---|---|
+| `pal-x11` | ✅ XInput2 | ✅ XTest | ✅ | ✅ |
+| `pal-windows` | ✅ LL Hooks | ✅ SendInput | ✅ | ✅ |
+| `pal-macos` | 🟡 仅权限检查 | ✅ CGEventPost | ✅ | ✅ |
+
+Hub 端实例化 `InputCapture`，Spoke 端实例化 `InputEmit`；本 crate 不强制
+角色绑定，由 `borderless-cli` 的 runtime 决定。

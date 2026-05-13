@@ -13,7 +13,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT OR Apache-2.0"
@@ -22,8 +22,8 @@ repository = "https://github.com/borderless/borderless"
 
 [workspace.dependencies]
 # Async runtime & networking
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "fs"] }
-quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "fs", "signal"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 rcgen = { version = "0.13", default-features = false, features = ["pem", "ring"] }
 rustls-pki-types = "1"
@@ -32,9 +32,6 @@ rustls-pki-types = "1"
 serde = { version = "1", features = ["derive"] }
 postcard = { version = "1", features = ["use-std"] }
 bytes = "1"
-
-# Discovery
-mdns-sd = "0.11"
 
 # Clipboard (cross-platform abstraction)
 arboard = { version = "3", default-features = false }

@@ -15,6 +15,10 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
+pub mod lazy;
+
+pub use lazy::{produce_image, serve_fetch, LazyStore, DEFAULT_TOTAL_CAP, INLINE_THRESHOLD};
+
 use borderless_core::{ClipItem, ClipboardSnapshot, NodeId};
 use parking_lot::Mutex;
 use std::collections::VecDeque;
@@ -84,6 +88,27 @@ impl Engine {
             origin: g.self_id,
             created_unix_ms: now_ms(),
             items: vec![ClipItem::Text(text)],
+        };
+        g.push_history(snap.clone());
+        snap
+    }
+
+    /// Build an image snapshot, using `store` to host the bytes if
+    /// they exceed the lazy threshold.
+    pub fn produce_image_snapshot(
+        &self,
+        store: &LazyStore,
+        bytes: Vec<u8>,
+        format: borderless_core::ImageFormat,
+    ) -> ClipboardSnapshot {
+        let item = produce_image(store, bytes, format);
+        let mut g = self.inner.lock();
+        g.local_version += 1;
+        let snap = ClipboardSnapshot {
+            version: g.local_version,
+            origin: g.self_id,
+            created_unix_ms: now_ms(),
+            items: vec![item],
         };
         g.push_history(snap.clone());
         snap

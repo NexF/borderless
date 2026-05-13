@@ -1,6 +1,6 @@
 # borderless-clipboard
 
-剪贴板同步引擎：版本号 + 防回环 + 历史。
+剪贴板同步引擎：版本号 + 防回环 + 历史 + 大对象懒载荷。
 
 ## 它解决的核心问题
 
@@ -10,9 +10,25 @@ A 复制 → B 收到 → B 写到本地 OS 剪贴板 → B 的监听器又触�
 本 crate 的 `Engine` 用三条规则掐死循环：
 
 1. **Lamport 版本号**：本地每次产生新内容把 `local_version += 1`；
-  收到远端版本号时取 `max(local, remote)`
-2. `**origin` 字段**：自己产生的快照在收到时直接 `Decision::Ignore`
+   收到远端版本号时取 `max(local, remote)`
+2. **`origin` 字段**：自己产生的快照在收到时直接 `Decision::Ignore`
 3. **严格单调**：`incoming.version <= local_version` 一律视为 stale 丢弃
+
+## 大对象懒载荷
+
+`LazyStore` 是发送方对 >256 KiB 内容的暂存：
+
+```rust
+let store = LazyStore::new();
+let snap = engine.produce_image_snapshot(&store, png_bytes, ImageFormat::Png);
+// 大于阈值时 snap.items[0] 是 ClipItem::Image { data: LazyPayload::OnDemand { hash, size } }
+// 真正字节躺在 store 里，等接收端发 FetchRequest 时再 serve
+```
+
+接收方收到 `LazyPayload::OnDemand` 后，于 paste 时通过
+`WireFrame::FetchRequest { hash }` 向源端拉取；源端用一个或多个
+`WireFrame::FetchResponse { hash, chunk_idx, total, bytes }` 分块返回；
+若源端已淘汰该 hash，则回 `WireFrame::FetchMiss`。
 
 ## API 速览
 
@@ -34,12 +50,5 @@ let recent = engine.history();
 
 ## 测试
 
-7 个单元测试，覆盖：
-
-- `produce` 正确推进版本号
-- self-origin 快照被丢弃
-- stale 版本被丢弃
-- 接受新远端后本地下次 `produce` 必须超越对端版本
-- **三节点链路（A→B→C→A）不会回环**（防止间接回声）
-- 历史环形 buffer 受 `history_limit` 限制
-
+涵盖 produce 推进版本号、self-origin / stale 丢弃、三节点链路不回环、
+LazyStore 阈值切换 + FIFO 淘汰 + 重复 hash 幂等、`serve_fetch` 解析。

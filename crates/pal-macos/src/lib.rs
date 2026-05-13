@@ -1,21 +1,26 @@
 //! macOS platform backend.
 //!
-//! v0.1 MVP scope: working text-clipboard via [`arboard`]; capture and
-//! emit are stubs. The plan for v0.2:
-//!
-//! * `InputCapture`: `CGEventTap` at the session level, run on a
-//!   dedicated thread that owns a `CFRunLoop`. **Requires the
-//!   Accessibility + Input Monitoring permissions** (the user has to
-//!   tick the box in System Settings → Privacy & Security; we surface
-//!   this from `borderless doctor`).
-//! * `InputEmit`: `CGEventPost(kCGHIDEventTap, ...)`.
+//! v0.2 ships:
+//! - Working text clipboard read/write/watch via `arboard`
+//! - Real `InputEmit` via `CGEventCreateKeyboardEvent` /
+//!   `CGEventCreateMouseEvent` + `CGEventPost`
+//! - `MacosCapture::start` checks `AXIsProcessTrusted` and refuses to
+//!   start without Accessibility permission. The full CGEventTap +
+//!   CFRunLoop scaffolding lands in v0.3 (it requires a richer
+//!   permissions UX than v0.2 ships).
 //!
 //! Compiles to a stub on non-macOS.
 
 #![cfg_attr(not(target_os = "macos"), allow(dead_code, unused_imports))]
 
 #[cfg(target_os = "macos")]
+mod capture;
+#[cfg(target_os = "macos")]
+mod emit;
+#[cfg(target_os = "macos")]
 mod imp;
+#[cfg(target_os = "macos")]
+pub mod keymap;
 
 #[cfg(target_os = "macos")]
 pub use imp::{MacosCapture, MacosClipboard, MacosEmit};

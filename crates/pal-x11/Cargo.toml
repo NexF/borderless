@@ -13,6 +13,6 @@ tracing = { workspace = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 arboard = { workspace = true }
-x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
+x11rb = { version = "0.13", features = ["allow-unsafe-code", "xinput", "xtest", "xfixes"] }
 async-trait = "0.1"
 tokio = { workspace = true }

@@ -1,0 +1,37 @@
+# borderless Hub 示例配置
+# 把本文件复制到 ~/.config/borderless/config.toml（Linux）
+# 或 %APPDATA%\borderless\borderless\config.toml（Windows）
+# 或 ~/Library/Application Support/io.borderless.borderless/config.toml（macOS）
+# 然后按需修改后启动 `borderless serve`。
+
+[node]
+# 节点显示名，会在 SignedHello 中广播给 Spoke
+name = "hub-desktop"
+
+[role]
+# Hub 模式：本机绑定监听端口，接受 Spoke 拨入
+kind = "hub"
+
+[hub]
+# 绑定的 IP；0.0.0.0 表示所有网卡
+bind_ip = "0.0.0.0"
+# TCP 监听端口
+port = 38437
+# 是否接受新 Spoke 的首次配对（TOFU）
+# 严格模式下设 false；首次部署或加新设备时改 true，配对完成后再改回 false
+accept_new_peers = false
+
+[client]
+# Hub 模式不会读取此段，留空即可
+
+[clipboard]
+# 剪贴板历史保留条数（仅本机查看用，不广播）
+history_size = 50
+# 同步纯文本剪贴板
+sync_text = true
+# 同步图片剪贴板（>256 KiB 走懒拉取）
+sync_image = true
+
+[input]
+# Hub 模式下此项无效（Hub 始终捕获本机键鼠）
+enabled = true

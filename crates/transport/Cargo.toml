@@ -9,11 +9,10 @@ license.workspace = true
 borderless-core = { workspace = true }
 
 tokio = { workspace = true }
-quinn = { workspace = true }
+tokio-rustls = { workspace = true }
 rustls = { workspace = true }
 rcgen = { workspace = true }
 rustls-pki-types = { workspace = true }
-mdns-sd = { workspace = true }
 
 serde = { workspace = true }
 postcard = { workspace = true }

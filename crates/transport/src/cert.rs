@@ -1,7 +1,7 @@
-//! Ephemeral TLS material for QUIC plus the "trust nothing at TLS"
-//! verifier that delegates real auth to the application layer.
+//! Ephemeral TLS material plus the "trust nothing at TLS" verifier
+//! that delegates real authentication to the application layer.
 //!
-//! The TLS handshake here exists *only* for QUIC's confidentiality and
+//! The TLS handshake here exists *only* for confidentiality and
 //! channel-binding properties. Whether we should actually talk to the
 //! peer is decided after the handshake by checking a signed `Hello`
 //! frame against the [`PeerStore`](crate::peer_store::PeerStore).
@@ -13,7 +13,7 @@ use rustls::pki_types::{CertificateDer, PrivatePkcs8KeyDer, ServerName, UnixTime
 use rustls::{DigitallySignedStruct, SignatureScheme};
 use std::sync::Arc;
 
-/// Generate an ephemeral self-signed cert + key suitable for QUIC.
+/// Generate an ephemeral self-signed cert + key suitable for TLS.
 pub fn ephemeral_self_signed() -> Result<(CertificateDer<'static>, PrivatePkcs8KeyDer<'static>)> {
     let mut params = CertificateParams::new(vec!["borderless".into()])?;
     params.distinguished_name = DistinguishedName::new();

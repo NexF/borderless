@@ -2,8 +2,9 @@
 
 虚拟屏幕拓扑、越界检测、修饰键状态机。**纯逻辑、零 IO**。
 
-PAL 上来的原始 `InputEvent` 配合用户配置的 `Layout`，由本 crate
-决定每条事件应该"留在本地"还是"转发给某个远端节点"。
+v0.2 起仅 Hub 端使用本 crate：Hub PAL 上来的原始 `InputEvent` 配合用户
+配置的 `Layout`，由本 crate 决定每条事件应该"留在 Hub 本地"还是"转发
+给某个 Spoke"。Spoke 不跑 capture，因此不会调本 crate。
 
 ## 模块
 

@@ -1,80 +1,15 @@
+//! X11 PAL: clipboard backend (always available) plus capture / emit
+//! shims that re-export the dedicated modules.
+
 use std::time::Duration;
 
 use async_trait::async_trait;
-use borderless_core::{ClipItem, ClipboardSnapshot, InputEvent};
-use borderless_pal::{
-    CaptureMode, Clipboard, EventSink, InputCapture, InputEmit, PalError, PalResult,
-};
+use borderless_core::{ClipItem, ClipboardSnapshot};
+use borderless_pal::{Clipboard, PalError, PalResult};
 use tokio::sync::mpsc;
-use tracing::{debug, warn};
 
-/// XInput2-based input capture (stub: not yet implemented).
-///
-/// The plan for v0.2 is to use [`x11rb`] with the XInput2 extension to
-/// receive raw `XI_RawMotion`, `XI_RawButtonPress` and
-/// `XI_RawKeyPress` events without grabbing the pointer. Pointer
-/// grabbing flips on only when crossing a screen boundary.
-pub struct X11Capture {
-    mode: CaptureMode,
-}
-
-impl X11Capture {
-    /// Construct a new capture backend (no-op until `start`).
-    pub fn new() -> Self {
-        Self {
-            mode: CaptureMode::Off,
-        }
-    }
-}
-
-impl Default for X11Capture {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputCapture for X11Capture {
-    async fn start(&mut self, _sink: EventSink) -> PalResult<()> {
-        warn!("X11Capture::start is a v0.1 stub; XInput2 wiring lands in v0.2");
-        Ok(())
-    }
-
-    async fn stop(&mut self) -> PalResult<()> {
-        Ok(())
-    }
-
-    async fn set_mode(&mut self, mode: CaptureMode) -> PalResult<()> {
-        debug!(?mode, "X11Capture::set_mode");
-        self.mode = mode;
-        Ok(())
-    }
-}
-
-/// XTest-based input emitter (stub: not yet implemented).
-pub struct X11Emit;
-
-impl X11Emit {
-    /// New emitter.
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-impl Default for X11Emit {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl InputEmit for X11Emit {
-    async fn emit(&mut self, _event: InputEvent) -> PalResult<()> {
-        Err(PalError::Unsupported(
-            "X11 input emission lands in v0.2 (XTest)",
-        ))
-    }
-}
+pub use crate::capture::X11Capture;
+pub use crate::emit::X11Emit;
 
 /// arboard-backed clipboard. Working today.
 pub struct X11Clipboard {
@@ -120,11 +55,9 @@ impl Clipboard for X11Clipboard {
 
     fn watch(&mut self) -> mpsc::UnboundedReceiver<String> {
         let (tx, rx) = mpsc::unbounded_channel();
-        // arboard does not have a native watcher; poll at 4 Hz. This is
-        // acceptable for v0.1 — the perceived latency target for text
-        // clipboard sync is < 50 ms only over the network, not across
-        // the local poll interval. v0.2 will replace this with the
-        // CLIPBOARD selection notification via x11rb.
+        // arboard does not have a native watcher; poll at 4 Hz. v0.3
+        // will replace this with the CLIPBOARD selection notification
+        // via XFixes.
         let baseline = self.inner.get_text().ok();
         std::thread::spawn(move || {
             let mut clip = match arboard::Clipboard::new() {
